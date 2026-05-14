@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # 服务1：你的 MySQL 数据库
+  db:
+    image: mysql:8.0
+    container_name: docpilot_mysql
+    restart: always
+    environment:
+      # 这里设置数据库的 Root 密码，要和你在后端代码里连数据库的密码一致！
+      MYSQL_ROOT_PASSWORD: 123456  
+      MYSQL_DATABASE: docpilot
+    ports:
+      - "3307:3306"
+    volumes:
+      # 数据卷挂载：保证即使容器被删了，你的数据库数据依然保存在电脑的 mysql_data 文件夹里
+      - ./mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p123456"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  # 服务2：你的 FastAPI 后端
+  web:
+    build: .  # 告诉 Compose 去当前目录找刚才写的 Dockerfile 进行打包
+    container_name: docpilot_fastapi
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env  # 极其重要！让 Docker 自动读取你本地隐藏的 .env 文件拿到 DeepSeek Key
+    environment:     
+      - DB_URL=mysql://root:123456@db:3306/docpilot #强行覆盖 .env 里的 DB_URL！告诉 FastAPI 容器内的真实地址
+    depends_on:       # 启动顺序：必须等 db 启动完，再启动 web
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

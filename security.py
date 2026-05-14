@@ -11,8 +11,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 有效期 1 天
 
-def get_password_hash(passord:str):
-    return pwd_context.hash(passord)
+def get_password_hash(password:str):
+    return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)

@@ -1,15 +1,19 @@
 from fastapi import FastAPI
 from tortoise.contrib.fastapi import register_tortoise
 from typing import Dict
+from dotenv import load_dotenv
+import os
 from routers import auth,docs
 
 api = FastAPI(swagger_ui_parameters={"persistAuthorization": True})
 api.include_router(auth.router)
 api.include_router(docs.router)
+load_dotenv()
+Mysql_URL = os.getenv("DB_URL")
 
 TORTOISE_ORM : Dict = {
     "connections" :{
-        "default": "mysql://root:123456@localhost:3306/docpilot",
+        "default": Mysql_URL,
     },
     "apps":{
         "models": {

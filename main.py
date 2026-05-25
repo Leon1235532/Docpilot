@@ -3,13 +3,16 @@ from tortoise.contrib.fastapi import register_tortoise
 from typing import Dict
 from dotenv import load_dotenv
 import os
-from routers import auth,docs
+from routers import auth,docs,document_router,chat_router
 
 api = FastAPI(swagger_ui_parameters={"persistAuthorization": True})
 api.include_router(auth.router)
 api.include_router(docs.router)
+api.include_router(document_router.router)
+api.include_router(chat_router.router)
+
 load_dotenv()
-Mysql_URL = os.getenv("DB_URL")
+Mysql_URL = os.getenv("DB_URL")   # os.getenv() 在 Python 里永远返回字符串（str）
 
 TORTOISE_ORM : Dict = {
     "connections" :{

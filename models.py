@@ -26,3 +26,14 @@ class TokenLog(Model):
     created_at = DatetimeField(auto_now_add=True)
     class Meta:
         ordering = ["-created_at"]
+
+class ChatHistory(Model):
+    id = IntField(pk = True)
+    user = ForeignKeyField("models.User",related_name="chat_history",on_delete=fields.CASCADE)
+    doc = ForeignKeyField("models.Document",related_name="chat_history",on_delete=fields.CASCADE)
+    role = CharField(max_length = 20,description = "角色")
+    content = TextField(description = "消息内容")
+    created_at = DatetimeField(auto_now_add = True)
+    class Meta:
+        ordering = ["-created_at"]
+        table_description = "AI多轮对话历史记录表"

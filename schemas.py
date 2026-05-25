@@ -44,3 +44,12 @@ class DocumentUpdate(BaseModel):
 class DocumentSummary(BaseModel):
     doc_id: int
     summary: str
+
+class Response_Limit(BaseModel):
+    core_conclusion: str = Field(description="一句话直接回答用户的核心问题或解释核心概念")
+    key_details: List[str] = Field(description="详细的知识点解析、步骤、临床表现或核心特征")
+    warnings_or_notes: List[str] = Field(description="相关的注意事项、高危提示、预防措施或补充说明（如果没有则输出['无特殊注意事项']）")
+
+class AskRequest(BaseModel):
+    question: str = Field(..., description="用户提出的问题")
+    doc_id: int = Field(..., description="当前对话关联的专科文献ID")

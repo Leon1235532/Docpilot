@@ -3,12 +3,12 @@ from tortoise.contrib.fastapi import register_tortoise
 from typing import Dict
 from dotenv import load_dotenv
 import os
-from routers import auth,docs,document_router,chat_router
+from routers import auth_router,docs_router,pdf_router,chat_router
 
 api = FastAPI(swagger_ui_parameters={"persistAuthorization": True})
-api.include_router(auth.router)
-api.include_router(docs.router)
-api.include_router(document_router.router)
+api.include_router(auth_router.router)
+api.include_router(docs_router.router)
+api.include_router(pdf_router.router)
 api.include_router(chat_router.router)
 
 load_dotenv()

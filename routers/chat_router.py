@@ -6,6 +6,7 @@ from models import User
 from dependencies import get_current_user
 import json
 import redis
+
 router = APIRouter(prefix="/input",tags=["问答模块"])
 try:
     r = redis.Redis(host = '127.0.0.1',port = 6379,decode_responses=True)
@@ -36,7 +37,6 @@ async def chat_with_doc_api(request: AskRequest, Current_User: User = Depends(ge
             doc_id=request.doc_id, # 确保前端传了
             user_question=request.question
         )
-        # return {"code": 200, "message": "success", "data": result}
     except Exception as e:
         print("\n" + "="*50)
         traceback.print_exc()

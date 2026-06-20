@@ -17,7 +17,7 @@ async def upload_document(file: UploadFile = File(...),Current_User: User = Depe
     # 所以我们需要先把前端传过来的内存文件，临时存到本地硬盘上。
     temp_dir = "./User_input_data"
     os.makedirs(temp_dir, exist_ok=True)
-    temp_file_path = os.path.join(temp_dir, file.filename)  # 拼接路径名
+    temp_file_path = os.path.join(temp_dir, file.filename)  # 拼接路径名,自动带分隔符
     
     # 1. 把上传的文件写入临时文件夹
     with open(temp_file_path, "wb") as buffer:

@@ -1,5 +1,13 @@
 import streamlit as st
 import requests
+import base64
+from pathlib import Path
+
+# ── Helper: 将本地图片转为 base64（用于嵌入 HTML）──
+def get_base64_of_bin_file(bin_file: str) -> str:
+    with open(bin_file, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
 
 # ── Configuration ──
 BASE_URL = "http://127.0.0.1:8000"
@@ -32,6 +40,8 @@ if "editing_doc" not in st.session_state:
     st.session_state.editing_doc = None
 if "current_doc_id" not in st.session_state:
     st.session_state.current_doc_id = None
+if "doc_created_msg" not in st.session_state:
+    st.session_state.doc_created_msg = None
 
 
 # ── Helper: build dynamic auth headers ──
@@ -160,6 +170,38 @@ with st.sidebar:
                     else:
                         st.error(result.get("detail", result.get("message", "修改失败")))
 
+        with st.expander("⚠️ 注销账号"):
+            st.error("注销操作不可逆，此操作将永久删除您的账号及所有云端文档数据，是否继续？")
+            delete_pwd = st.text_input("请输入当前密码确认注销", type="password", key="delete_pwd")
+
+            if st.button("🚨 确认永久注销", use_container_width=True):
+                if not delete_pwd:
+                    st.warning("请输入密码")
+                else:
+                    with st.spinner("注销中..."):
+                        try:
+                            resp = requests.post(
+                                f"{BASE_URL}/auth/close",
+                                json={"pwd": delete_pwd},
+                                headers=auth_headers(),
+                                timeout=30,
+                            )
+                            result = resp.json()
+                        except Exception as e:
+                            st.error(f"注销请求失败：{e}")
+                            st.stop()
+
+                    if resp.status_code == 200:
+                        st.success("注销成功！")
+                        st.session_state.token = None
+                        st.session_state.username = None
+                        st.session_state.chat_history = []
+                        st.session_state.editing_doc = None
+                        st.session_state.current_doc_id = None
+                        st.rerun()
+                    else:
+                        st.error(result.get("detail", result.get("message", "注销失败")))
+
         st.divider()
 
         # ── 文件上传与入库（仅登录后可见）──
@@ -210,13 +252,17 @@ with st.sidebar:
                                 headers=auth_headers(),
                                 timeout=30,
                             )
-                            if resp.status_code in (200, 201):
-                                st.toast("📝 新文档创建成功！", icon="✅")
-                                st.rerun()
-                            else:
-                                st.error("创建失败")
+                            data = resp.json()
                         except Exception as e:
                             st.error(f"请求失败：{e}")
+                            st.stop()
+
+                    if resp.status_code in (200, 201):
+                        st.session_state.doc_created_msg = f"✅ 文档「{new_title}」创建成功！"
+                        st.rerun()
+                    else:
+                        detail = data.get("detail", data.get("message", "未知错误"))
+                        st.error(f"创建失败：{detail}")
 
         # ── 📚 我的私人图书馆 ──
         st.markdown("#### 📚 我的私人图书馆")
@@ -294,6 +340,11 @@ st.title("📄 DocPilot 智能文档助手")
 if st.session_state.show_login_toast:
     st.toast(f"🎉 欢迎登录，{st.session_state.username}！", icon="👋")
     st.session_state.show_login_toast = False
+
+# ── 跨 rerun 的文档创建成功提示 ──
+if st.session_state.doc_created_msg:
+    st.toast(st.session_state.doc_created_msg, icon="✅")
+    st.session_state.doc_created_msg = None
 
 if st.session_state.token is None:
     # ── Landing Page（未登录状态）──
@@ -373,52 +424,20 @@ else:
                     st.rerun()
         st.divider()
 
-    # Display chat history
-    for msg in st.session_state.chat_history:
-        with st.chat_message(msg["role"]):
-            ui_type = msg.get("ui_type")
-            if ui_type == "medical_card":
-                d = msg.get("data", {})
-                st.success(f"💡 {d.get('core_conclusion', '')}")
-                col_left, col_right = st.columns(2)
-                with col_left:
-                    st.subheader("📝 详细解析")
-                    kd = d.get("key_details", [])
-                    if kd:
-                        for item in kd:
-                            st.markdown(f"- ✅ {item}")
-                    else:
-                        st.info("暂无数据")
-                with col_right:
-                    st.subheader("⚠️ 注意事项与预警")
-                    wn = d.get("warnings_or_notes", [])
-                    if wn:
-                        for item in wn:
-                            st.markdown(f"- 🚨 {item}")
-                    else:
-                        st.info("无特殊注意事项")
-            else:
-                st.markdown(msg.get("content", ""))
-
-    # ── AI 文档总结展示 ──
-    if st.session_state.summary_content:
-        with st.chat_message("assistant"):
-            st.markdown("#### 📝 AI 文档总结")
-            st.info(st.session_state.summary_content)
-        st.session_state.summary_content = None
-
-    # ── Chat input ──
-    if prompt := st.chat_input("请输入你的文档需求…"):
-        # Add user message to history
+    # ── Chat input（放在显示前，但输入框自动渲染在页面底部）──
+    prompt = st.chat_input("请输入你的文档需求…")
+    if prompt:
+        # 先写入用户消息到历史
         st.session_state.chat_history.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # ── 防呆检查：必须选中文献 ──
+        # 防呆检查
         if not st.session_state.get("current_doc_id"):
             st.warning("请先在左侧选择一篇专属文献，再开始对话！")
             st.stop()
 
+        # AI 思考与回复
         with st.chat_message("assistant"):
             with st.spinner("思考中..."):
                 try:
@@ -445,15 +464,12 @@ else:
                     )
                 else:
                     medical_data = payload.get("data", {})
-
                     core_conclusion = medical_data.get("core_conclusion", "暂无结论")
                     key_details = medical_data.get("key_details", [])
                     warnings_or_notes = medical_data.get("warnings_or_notes", [])
 
                     st.success(f"💡 {core_conclusion}")
-
                     col_left, col_right = st.columns(2)
-
                     with col_left:
                         st.subheader("📝 详细解析")
                         if key_details:
@@ -461,7 +477,6 @@ else:
                                 st.markdown(f"- ✅ {item}")
                         else:
                             st.info("暂无数据")
-
                     with col_right:
                         st.subheader("⚠️ 注意事项与预警")
                         if warnings_or_notes:
@@ -479,3 +494,66 @@ else:
                 st.session_state.chat_history.append(
                     {"role": "assistant", "content": f"❌ {err_msg}"}
                 )
+
+        st.rerun()
+
+    # ── Display chat history
+    if len(st.session_state.chat_history) == 0:
+        # ── 空状态：显示欢迎语 + GIF ──
+        try:
+            gif_base64 = get_base64_of_bin_file("welcome.gif")
+            img_html = img_html = f'<img src="data:image/gif;base64,{gif_base64}" style="display: block; margin: 15px auto 0 auto; width: 160px; height: auto;">'
+        except Exception:
+            img_html = ""
+
+        st.markdown(
+            f"""<div style="text-align: center; margin-top: 2.5vh; color: #555;">
+<h1 style="font-weight: 500; letter-spacing: 2px;">👋I'm Mr.DocPilot</h1>
+
+<div style="font-size: 1.2rem; color: #888; margin-top: 10px; margin-bottom: 12px; line-height: 1.6;">
+作为你的专属医学文献助手，我已经准备好了。<br>  
+你可以上传左侧的心外科护理文献，或者直接向我提问。
+</div>
+
+<div style="font-size: 2.3rem; font-weight: 600; color: #333;">
+今天有什么我能帮你的吗？
+</div>
+
+{img_html}
+</div>""",
+            unsafe_allow_html=True
+        )
+    else:
+        for msg in st.session_state.chat_history:
+            with st.chat_message(msg["role"]):
+                ui_type = msg.get("ui_type")
+                if ui_type == "medical_card":
+                    d = msg.get("data", {})
+                    st.success(f"💡 {d.get('core_conclusion', '')}")
+                    col_left, col_right = st.columns(2)
+                    with col_left:
+                        st.subheader("📝 详细解析")
+                        kd = d.get("key_details", [])
+                        if kd:
+                            for item in kd:
+                                st.markdown(f"- ✅ {item}")
+                        else:
+                            st.info("暂无数据")
+                    with col_right:
+                        st.subheader("⚠️ 注意事项与预警")
+                        wn = d.get("warnings_or_notes", [])
+                        if wn:
+                            for item in wn:
+                                st.markdown(f"- 🚨 {item}")
+                        else:
+                            st.info("无特殊注意事项")
+                else:
+                    st.markdown(msg.get("content", ""))
+
+    # ── AI 文档总结展示 ──
+    if st.session_state.summary_content:
+        with st.chat_message("assistant"):
+            st.markdown("#### 📝 AI 文档总结")
+            st.info(st.session_state.summary_content)
+        st.session_state.summary_content = None
+

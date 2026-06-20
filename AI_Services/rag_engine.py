@@ -96,7 +96,7 @@ async def chat_with_doc(user_id: int, doc_id: int, user_question: str):
             "context": docs,
             "question": user_question
         })
-        
+        # 将字典输出为json文本字符串
         ai_response_str = json.dumps(ai_response_dict, ensure_ascii=False)
         ui_type = "medical_card"
         final_data = ai_response_dict 

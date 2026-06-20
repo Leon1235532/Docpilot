@@ -20,6 +20,9 @@ class Pwdchange(BaseModel):
     ori_pwd: str =Field(...,max_length=13)
     new_pwd: str =Field(...,max_length=13)
 
+class Verifypwd(BaseModel):
+    pwd : str = Field(...,max_length=13)
+
 class DocumentCreate(BaseModel):
     title: str = Field(...)
     content: str | None = None
@@ -44,6 +47,7 @@ class DocumentUpdate(BaseModel):
 class DocumentSummary(BaseModel):
     doc_id: int
     summary: str
+    source: str
 
 class Response_Limit(BaseModel):
     core_conclusion: str = Field(description="一句话直接回答用户的核心问题或解释核心概念")

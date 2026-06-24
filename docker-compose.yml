@@ -22,8 +22,9 @@ services:
       retries: 10
   # 服务2：你的 FastAPI 后端
   web:
-    build: 
-      context: ./backend
+    # build: 
+    #   context: ./backend
+    image: ccr.ccs.tencentyun.com/docpilot/web_image:v1
     container_name: docpilot_fastapi
     restart: always
     ports:
@@ -52,8 +53,9 @@ services:
 
   # 服务4：前端
   frontend:
-    build:
-      context: ./frontend
+    # build:
+    #   context: ./frontend
+    image: ccr.ccs.tencentyun.com/docpilot/frontend_image:v1
     container_name: docpilot_frontend
     restart: always
     ports:

@@ -3,7 +3,7 @@ from models import User
 from dependencies import get_current_user
 import os
 import shutil
-from AI_Services.rag_engine import process_and_store_pdf
+from AI_Services.pdf_process import process_and_store_pdf
 
 # 实例化一个路由器
 router = APIRouter(prefix= "/input",tags=["上传知识库"])
@@ -15,7 +15,7 @@ async def upload_document(file: UploadFile = File(...),Current_User: User = Depe
     """
     # 坑点预警：PyPDFLoader 只能读取硬盘上的真实文件。
     # 所以我们需要先把前端传过来的内存文件，临时存到本地硬盘上。
-    temp_dir = "./User_input_data"
+    temp_dir = "../User_input_data"
     os.makedirs(temp_dir, exist_ok=True)
     temp_file_path = os.path.join(temp_dir, file.filename)  # 拼接路径名,自动带分隔符
     

@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import base64
 from pathlib import Path
+import os
 
 # ── Helper: 将本地图片转为 base64（用于嵌入 HTML）──
 def get_base64_of_bin_file(bin_file: str) -> str:
@@ -10,7 +11,7 @@ def get_base64_of_bin_file(bin_file: str) -> str:
     return base64.b64encode(data).decode()
 
 # ── Configuration ──
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 
 st.set_page_config(page_title="DocPilot 智能文档助手", layout="wide")
 

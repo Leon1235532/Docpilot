@@ -1,0 +1,20 @@
+# --- Python 缓存 ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- 本地虚拟环境 ---
+venv/
+env/
+
+# --- 敏感信息 ---
+.env
+
+# --- IDE 与 Git ---
+.git/
+.vscode/
+.idea/
+
+# --- 文档 ---
+*.md
+.gitignore

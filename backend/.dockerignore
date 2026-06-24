@@ -1,0 +1,27 @@
+# --- Python 缓存 ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- 本地虚拟环境 ---
+venv/
+env/
+
+# --- 本地数据与缓存（极其重要：防打包进镜像） ---
+chroma_db/
+User_input_data/
+mysql_data/
+
+# --- 敏感信息 ---
+# 密码和密钥由 docker-compose 的 env_file 注入，绝对不能打包
+.env
+
+# --- IDE 与 Git ---
+.git/
+.vscode/
+.idea/
+
+# --- 文档与无关静态资源 ---
+*.md
+note_img/
+.gitignore

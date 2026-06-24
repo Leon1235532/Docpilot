@@ -11,7 +11,7 @@ api.include_router(docs_router.router)
 api.include_router(pdf_router.router)
 api.include_router(chat_router.router)
 
-load_dotenv()
+load_dotenv("../.env")
 Mysql_URL = os.getenv("DB_URL")   # os.getenv() 在 Python 里永远返回字符串（str）
 
 TORTOISE_ORM : Dict = {

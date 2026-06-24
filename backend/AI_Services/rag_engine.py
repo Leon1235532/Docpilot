@@ -11,37 +11,6 @@ from AI_Services.llm_config import llm,my_embedding
 
 parser = JsonOutputParser(pydantic_object=Response_Limit)
 
-# 使用 .partial() 焊死 JSON 格式要求，保持模板清爽
-prompt = ChatPromptTemplate.from_messages([
-    ("system", "你是一个极其严谨的医学提取助手。你必须严格遵守以下格式要求：\n{format_instructions}"),
-    ("human", "这是知识库的参考资料：\n{context}\n\n请回答问题:{question}")
-])
-
-# 将指定路径的pdf 加载、切分、向量化存入chroma
-def process_and_store_pdf(file_path: str, filename: str):
-
-    loader = PyPDFLoader(file_path)
-    docs = loader.load()
-
-    # 为了防止不同文档混淆，给每一页强行打上来源标签
-    for doc in docs:
-        doc.metadata["source"] = filename 
-
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=300,
-        chunk_overlap=50,
-    )
-    chunks = text_splitter.split_documents(docs)
-
-    # 4. 存入本地 Chroma 数据库
-    # 注意：这里不用 from_documents 重新建库，而是用 add_documents 追加数据！
-    db = Chroma(
-        persist_directory="./chroma_db", 
-        embedding_function=my_embedding
-    )
-    db.add_documents(chunks)
-    return len(chunks)
-
 # ================= 意图识别交警 =================llm输出问题类型
 def check_intent(question: str) -> str:
     """
@@ -57,10 +26,10 @@ def check_intent(question: str) -> str:
     # 这里用普通的字符串解析器，不需要 Pydantic
     chain = intent_prompt | llm | StrOutputParser()
     result = chain.invoke({"question": question})
-    
     return result.strip().lower()
 
 # ================= 4. 终极问答引擎 (带记忆 + RAG) =================
+# PDF已经过pdf_process函数处理存到chroma，故只需检索即可。
 async def chat_with_doc(user_id: int, doc_id: int, user_question: str):  
     """接收问题，融合记忆与文献，返回最终答案并落库"""
     intent = check_intent(user_question)
@@ -74,14 +43,15 @@ async def chat_with_doc(user_id: int, doc_id: int, user_question: str):
         elif record.role == "ai":
             memory.chat_memory.add_ai_message(record.content)
             
-    processed_history = memory.load_memory_variables({}).get("history", [])
+    processed_history = memory.load_memory_variables({}).get("history", [])     # 消息列表
 
     # 3. 路由分发大模型管线
     if "medical" in intent:
         # 【路线 A：医学文献 + 记忆】
-        db = Chroma(persist_directory="./chroma_db", embedding_function=my_embedding)
+        db = Chroma(persist_directory="../chroma_db", embedding_function=my_embedding)
         retriever = db.as_retriever(search_type="mmr", search_kwargs={"k": 5, "fetch_k": 10})
         docs = retriever.invoke(user_question)
+        formatted_context = "\n\n".join([doc.page_content for doc in docs])
 
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", "你是一个极其严谨的医学提取助手。你必须严格遵守以下格式要求：\n{format_instructions}"),
@@ -93,7 +63,7 @@ async def chat_with_doc(user_id: int, doc_id: int, user_question: str):
         ai_response_dict = await chain.ainvoke({
             "format_instructions": parser.get_format_instructions(),
             "history": processed_history,
-            "context": docs,
+            "context": formatted_context,
             "question": user_question
         })
         # 将字典输出为json文本字符串

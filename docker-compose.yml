@@ -22,18 +22,44 @@ services:
       retries: 10
   # 服务2：你的 FastAPI 后端
   web:
-    build: .  # 告诉 Compose 去当前目录找刚才写的 Dockerfile 进行打包
+    build: 
+      context: ./backend
     container_name: docpilot_fastapi
     restart: always
     ports:
       - "8000:8000"
     env_file:
-      - .env  # 极其重要！让 Docker 自动读取你本地隐藏的 .env 文件拿到 DeepSeek Key
-    environment:     
-      - DB_URL=mysql://root:123456@db:3306/docpilot #强行覆盖 .env 里的 DB_URL！告诉 FastAPI 容器内的真实地址
-    depends_on:       # 启动顺序：必须等 db 启动完，再启动 web
+      - .env
+    environment:
+      - DB_URL=mysql://root:123456@db:3306/docpilot
+    depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
 
-volumes:
-  mysql_data:
+  # 服务3：Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: docpilot_redis
+    restart: always
+    ports:
+      - "6369:6379"
+    # 开启redis-AOF，保证数据持久化
+    command: redis-server --appendonly yes
+    volumes:
+      - ./redis_data:/data
+
+  # 服务4：前端
+  frontend:
+    build:
+      context: ./frontend
+    container_name: docpilot_frontend
+    restart: always
+    ports:
+      - "8401:8501"
+    environment:
+      - BACKEND_URL=http://web:8000
+    depends_on:
+      web:
+        condition: service_started

@@ -9,3 +9,11 @@ __pycache__/
 # 数据库
 mysql_data/
 chroma_db/
+User_input_data/
+# --- 数据库与缓存持久化数据 ---
+# 忽略整个 Redis 本地挂载目录
+redis_data/
+# 双重保险：全局忽略 Redis 数据文件格式
+*.rdb
+*.aof
+*.aof.*

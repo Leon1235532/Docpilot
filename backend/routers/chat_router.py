@@ -9,7 +9,7 @@ import redis
 
 router = APIRouter(prefix="/input",tags=["问答模块"])
 try:
-    r = redis.Redis(host = '127.0.0.1',port = 6379,decode_responses=True)
+    r = redis.Redis(host = 'redis',port = 6379,decode_responses=True)
 except Exception as e:
     print(f"Redis 初始化失败，请检查数据库状态: {e}")
 

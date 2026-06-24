@@ -7,7 +7,7 @@ import redis
 
 router = APIRouter(prefix="/docs", tags=["文档管理"])
 try:
-    r = redis.Redis(host="127.0.0.1",port=6379,decode_responses=True)
+    r = redis.Redis(host="redis",port=6379,decode_responses=True)
 except Exception as e:
     print(f"Redis 初始化失败，请检查数据库状态: {e}")
 
@@ -61,9 +61,10 @@ async def updtae_doc(doc_id: int,Update_data: DocumentUpdate,
             status_code= status.HTTP_404_UNAUTHORIZED,
             detail = "文件不存在或您无权修改！"
         )
+    # Pydantic 模型对象转成字典
     Update_dict = Update_data.model_dump(exclude_unset=True)
     if Update_dict:
-        doc.update_from_dict(Update_dict)
+        doc.update_from_dict(Update_dict)   # 自动匹配字典中对应值并更新
         await doc.save()
     return doc    
 

@@ -3,7 +3,7 @@
 <br />
 <div align="center">
 
-<h3 align="center">Docpilot</h1>
+<h1 align="center">Docpilot</h1>
 
   <p align="center">
     基于 FastAPI + LLM 的 AI 文档问答平台，支持文档智能摘要与 RAG 检索增强问答

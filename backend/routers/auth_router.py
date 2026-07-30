@@ -58,6 +58,7 @@ async def modify_pwd(pwd: Pwdchange,
     await current_user.save()
     return "修改成功,请重新登录！"
 
+#用户注销
 @router.post("/close")
 async def close_account(input_pwd: Verifypwd,current_user = Depends(get_current_user)):
     """
@@ -75,6 +76,3 @@ async def close_account(input_pwd: Verifypwd,current_user = Depends(get_current_
 @router.get("/test", response_model=UserResponse)   #测试用户令牌功能
 async def test(current_user = Depends(get_current_user)):
     return current_user
-            
-        
-    

@@ -126,7 +126,7 @@ Docpilot/
 <!-- CONTACT -->
 ## Contact
 
-Leon1235532 - xzr12367@126.com
+Leon1235532 - xzr12367@gmail.com
 
 Project Link: [https://github.com/Leon1235532/Docpilot](https://github.com/Leon1235532/Docpilot)
 

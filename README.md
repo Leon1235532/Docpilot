@@ -2,9 +2,6 @@
 
 <br />
 <div align="center">
-  <a href="https://github.com/Leon1235532/Docpilot">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
 
 <h3 align="center">Docpilot</h3>
 

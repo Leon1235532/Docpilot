@@ -1,6 +1,5 @@
 <a id="readme-top"></a>
 
-<br />
 <div align="center">
 
 <h1 align="center">Docpilot</h1>
